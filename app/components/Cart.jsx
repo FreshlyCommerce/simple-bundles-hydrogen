@@ -40,7 +40,7 @@ function CartLines({lines, layout}) {
     <div aria-labelledby="cart-lines">
       <ul>
         {lines.nodes.map((line) => (
-          <CartLineItem key={line.id} line={line} layout={layout} />
+          line.id ? <CartLineItem key={line.id} line={line} layout={layout} /> : null
         ))}
       </ul>
     </div>
