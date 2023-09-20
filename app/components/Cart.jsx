@@ -3,6 +3,7 @@ import {Link} from '@remix-run/react';
 import {useVariantUrl} from '~/utils';
 
 export function CartMain({layout, cart}) {
+  console.log('CartMain', cart)
   const linesCount = Boolean(cart?.lines?.nodes?.length || 0);
   const withDiscount =
     cart &&
@@ -40,7 +41,7 @@ function CartLines({lines, layout}) {
     <div aria-labelledby="cart-lines">
       <ul>
         {lines.nodes.map((line) => (
-          line.id ? <CartLineItem key={line.id} line={line} layout={layout} /> : null
+          <CartLineItem key={line.id} line={line} layout={layout} />
         ))}
       </ul>
     </div>
