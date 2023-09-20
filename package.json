@@ -29,9 +29,15 @@
     "@total-typescript/ts-reset": "^0.4.2",
     "eslint": "^8.20.0",
     "eslint-plugin-hydrogen": "0.12.2",
+    "postcss": "^8.4.21",
+    "postcss-import": "^15.1.0",
+    "postcss-preset-env": "^8.2.0",
     "prettier": "^2.8.4"
   },
   "engines": {
     "node": ">=16.13"
-  }
+  },
+  "browserslist": [
+    "defaults"
+  ]
 }
