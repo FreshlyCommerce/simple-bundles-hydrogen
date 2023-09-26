@@ -152,6 +152,7 @@ function ProductMain({selectedVariant, product, variants}) {
       <br />
       <br />
       <p>
+        <strong>{selectedVariant.metafield.value}</strong>
         <strong>Description</strong>
       </p>
       <br />
@@ -318,10 +319,18 @@ const PRODUCT_FRAGMENT = `#graphql
     }
     selectedVariant: variantBySelectedOptions(selectedOptions: $selectedOptions) {
       ...ProductVariant
+      metafield(namespace: "simple_bundles", key: "bundled_variants") {
+        value
+        type
+      }
     }
     variants(first: 1) {
       nodes {
         ...ProductVariant
+        metafield(namespace: "simple_bundles", key: "bundled_variants") {
+          value
+          type
+        }
       }
     }
     seo {
