@@ -120,8 +120,33 @@ function ProductImage({image}) {
   );
 }
 
+// Define the BundleItems component
+function BundleItems({ bundleItems }) {
+  return (
+    <div>
+      <p><strong>This bundle includes:</strong></p>
+      <br />
+      <ul>
+      {bundleItems.map((bundle, index) => (
+        <li key={index}>
+          {bundle.quantity_in_bundle} x {bundle.product_title}
+          {bundle.variant_title !== "Default Title" ? ` - ${bundle.variant_title}` : ''}
+        </li>
+      ))}
+    </ul>
+    </div>
+  );
+}
+
 function ProductMain({selectedVariant, product, variants}) {
   const {title, descriptionHtml} = product;
+
+  // Assuming you have a JSON string stored in selectedVariant.metafield.value
+  const metafieldString = selectedVariant?.metafield?.value;
+
+  // Parse the JSON string into a JavaScript object
+  const metafield = JSON.parse(metafieldString);
+
   return (
     <div className="product-main">
       <h1>{title}</h1>
@@ -151,8 +176,9 @@ function ProductMain({selectedVariant, product, variants}) {
       </Suspense>
       <br />
       <br />
+      <BundleItems bundleItems={metafield} />
+      <br />
       <p>
-        <strong>{selectedVariant.metafield.value}</strong>
         <strong>Description</strong>
       </p>
       <br />
