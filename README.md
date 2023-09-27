@@ -70,19 +70,19 @@ You should get a response similar to this:
   "data": {
     "metafieldStorefrontVisibilityCreate": {
       "metafieldStorefrontVisibility": {
-        "id": "gid://shopify/MetafieldStorefrontVisibility/1807909019"
+        "id": "gid://shopify/MetafieldStorefrontVisibility/[xxxxxxxxxx]"
       },
       "userErrors": []
     }
   },
   "extensions": {
     "cost": {
-      "requestedQueryCost": 10,
-      "actualQueryCost": 10,
+      "requestedQueryCost": [xx],
+      "actualQueryCost": [xx],
       "throttleStatus": {
-        "maximumAvailable": 1000,
-        "currentlyAvailable": 976,
-        "restoreRate": 50
+        "maximumAvailable": [xx],
+        "currentlyAvailable": [xx],
+        "restoreRate": [xx]
       }
     }
   }
@@ -128,7 +128,7 @@ function BundleItems({ bundleItems }) {
 }
 ```
 
-6. Reference and parse the JSON of the metafield string in your main Product component
+6. Reference and parse the JSON of the metafield string in your main Product component. Also add in conditions for if bundle has Infinite Options or if its a non-bundled product.
 
 ```javascript
 function ProductMain({selectedVariant, product, variants}) {
@@ -139,14 +139,29 @@ function ProductMain({selectedVariant, product, variants}) {
 	// Parse the JSON string into a JavaScript object
 	const metafield = JSON.parse(metafieldString);
 
+  // Check if metafield[0].type is "Infinite options"
+  const isInfiniteOptions = metafield?.[0]?.type === "Infinite options";
+
+  // Conditionally render the BundleItems component. Hide if type is Infinite options or non-bundle product.
+  const bundleItemsComponent = !isInfiniteOptions && metafield?.length > 0 && (
+    <BundleItems bundleItems={metafield} />
+  );
+
 	// Rest of your code ..
 }
 ```
 
-7. Add the bundleItems component within your main product component
+7. Add the bundleItems component expression within your main product component
 
 ```javascript
-<BundleItems bundleItems={metafield} />
+function ProductMain({ selectedVariant, product, variants }) {
+  // Rest of code
+  return (
+    // Rest of code
+    {bundleItemsComponent}
+    // Rest of code
+  )
+}
 ```
 
-8. You should see the bundle items for each bundle, based on bundle variants
+8. You should see the bundle items for each bundle, based on bundle variants. Check bundled products with infinite options or non-bundled products to make sure the bundled items component don't appear.

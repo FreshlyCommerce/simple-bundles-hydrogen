@@ -138,14 +138,22 @@ function BundleItems({ bundleItems }) {
   );
 }
 
-function ProductMain({selectedVariant, product, variants}) {
-  const {title, descriptionHtml} = product;
-
+function ProductMain({ selectedVariant, product, variants }) {
+  const { title, descriptionHtml } = product;
+  
   // Assuming you have a JSON string stored in selectedVariant.metafield.value
   const metafieldString = selectedVariant?.metafield?.value;
 
   // Parse the JSON string into a JavaScript object
   const metafield = JSON.parse(metafieldString);
+
+  // Check if metafield[0].type is "Infinite options"
+  const isInfiniteOptions = metafield?.[0]?.type === "Infinite options";
+
+  // Conditionally render the BundleItems component. Hide if type is Infinite options or non-bundle product.
+  const bundleItemsComponent = !isInfiniteOptions && metafield?.length > 0 && (
+    <BundleItems bundleItems={metafield} />
+  );
 
   return (
     <div className="product-main">
@@ -176,13 +184,13 @@ function ProductMain({selectedVariant, product, variants}) {
       </Suspense>
       <br />
       <br />
-      <BundleItems bundleItems={metafield} />
+      {bundleItemsComponent}
       <br />
       <p>
         <strong>Description</strong>
       </p>
       <br />
-      <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
+      <div dangerouslySetInnerHTML={{ __html: descriptionHtml }} />
       <br />
     </div>
   );
