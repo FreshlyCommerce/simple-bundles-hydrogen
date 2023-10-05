@@ -1,4 +1,4 @@
-import {Suspense} from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import {defer, redirect} from '@shopify/remix-oxygen';
 import {Await, Link, useLoaderData} from '@remix-run/react';
 
@@ -140,25 +140,49 @@ function BundleItems({ bundleItems }) {
 
 function ProductMain({ selectedVariant, product, variants }) {
   const { title, descriptionHtml } = product;
-  
-  // Assuming you have a JSON string stored in selectedVariant.metafield.value
-  const metafieldString = selectedVariant?.metafield?.value;
+
+  // Get value from Product Bundled Variant Metafield
+  const bvMetafieldString = selectedVariant?.bundledVariantsMetafield?.value;
+  // Get value from Product Variant Options v2 Metafield
+  const voMetafieldString = selectedVariant?.variantOptionsMetafield?.value;
 
   // Parse the JSON string into a JavaScript object
-  const metafield = JSON.parse(metafieldString);
+  const bvMetafield = JSON.parse(bvMetafieldString);
+
+  // Parse if Build a Bundle metafields exist
+  let voMetafield = null;
+  if (voMetafieldString) {
+    try {
+      voMetafield = JSON.parse(voMetafieldString);
+    } catch (e) {
+      console.error("Invalid JSON string:", e);
+    }
+  }
+
+  // console.log(voMetafieldString)
 
   // Check if metafield[0].type is "Infinite options"
-  const isInfiniteOptions = metafield?.[0]?.type === "Infinite options";
+  const isInfiniteOptions = bvMetafield?.[0]?.type === "Infinite options";
 
   // Conditionally render the BundleItems component. Hide if type is Infinite options or non-bundle product.
-  const bundleItemsComponent = !isInfiniteOptions && metafield?.length > 0 && (
-    <BundleItems bundleItems={metafield} />
+  const bundleItemsComponent = !isInfiniteOptions && bvMetafield?.length > 0 && (
+    <BundleItems bundleItems={bvMetafield} />
   );
+
+  const [bundleSelection, setBundleSelection] = useState('');
+  const [selectedOptions, setSelectedOptions] = useState({});
+
+  const handleBundleChange = (bundleString, options) => {
+    setBundleSelection(bundleString);
+    setSelectedOptions(options);
+  };
 
   return (
     <div className="product-main">
       <h1>{title}</h1>
       <ProductPrice selectedVariant={selectedVariant} />
+      <br />
+      <BundleOptionSelect voMetafield={voMetafield} onBundleChange={handleBundleChange} />
       <br />
       <Suspense
         fallback={
@@ -178,6 +202,8 @@ function ProductMain({ selectedVariant, product, variants }) {
               product={product}
               selectedVariant={selectedVariant}
               variants={data.product?.variants.nodes || []}
+              bundleSelection={bundleSelection}
+              selectedOptions={selectedOptions}
             />
           )}
         </Await>
@@ -192,6 +218,72 @@ function ProductMain({ selectedVariant, product, variants }) {
       <br />
       <div dangerouslySetInnerHTML={{ __html: descriptionHtml }} />
       <br />
+    </div>
+  );
+}
+
+// Define Bundle Option Select component
+function BundleOptionSelect({ voMetafield, onBundleChange }) {
+  const [selectedOptions, setSelectedOptions] = useState({});
+  const [bundleSelection, setBundleSelection] = useState('');
+
+  // Initialize selectedOptions with the first value from each select field
+  useEffect(() => {
+    if (voMetafield) {
+      const initialOptions = {};
+      voMetafield.forEach((optionGroup) => {
+        const optionName = optionGroup[0].optionName;
+        const optionValues = optionGroup[0].optionValues.split(", ");
+        initialOptions[optionName] = optionValues[0]; // Assuming the first value should be selected
+      });
+      setSelectedOptions(initialOptions);
+    }
+  }, [voMetafield]);
+
+  useEffect(() => {
+    const bundleString = Object.values(selectedOptions).join(' <> ');
+    setBundleSelection(bundleString);
+    console.log(`_bundle_selection: ${bundleString}`);
+    onBundleChange(bundleString, selectedOptions); // Pass the data back to the parent
+  }, [selectedOptions]);
+
+  const handleSelectChange = (e, optionName) => {
+    setSelectedOptions({
+      ...selectedOptions,
+      [optionName]: e.target.value,
+    });
+  };
+
+  return (
+    <div>
+      {voMetafield.map((optionGroup, index) => {
+        const optionName = optionGroup[0].optionName;
+        const optionValues = optionGroup[0].optionValues.split(", ");
+        const isLastItem = index === voMetafield.length - 1;
+        return (
+          <div key={index}>
+            <label>{optionName}</label><br />
+            <select name={optionName} onChange={(e) => handleSelectChange(e, optionName)}>
+              {optionValues.map((value, i) => (
+                <option key={i} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+            {!isLastItem && <><br /><br /></>}
+          </div>
+        );
+      })}
+      {/* Generate hidden fields */}
+      {Object.keys(selectedOptions).map((key, index) => (
+        <input 
+          type="hidden" 
+          key={index}
+          name={`properties[${key}]`} 
+          value={selectedOptions[key]} 
+        />
+      ))}
+      <input type="hidden" name="_bundle_selection" value={bundleSelection} />
     </div>
   );
 }
@@ -217,7 +309,7 @@ function ProductPrice({selectedVariant}) {
   );
 }
 
-function ProductForm({product, selectedVariant, variants}) {
+function ProductForm({product, selectedVariant, variants, bundleSelection, selectedOptions}) {
   return (
     <div className="product-form">
       <VariantSelector
@@ -279,11 +371,20 @@ function ProductOptions({option}) {
   );
 }
 
-function AddToCartButton({analytics, children, disabled, lines, onClick}) {
+function AddToCartButton({analytics, children, disabled, lines, onClick, bundleSelection, selectedOptions}) {
   return (
     <CartForm route="/cart" inputs={{lines}} action={CartForm.ACTIONS.LinesAdd}>
       {(fetcher) => (
         <>
+          {/* {Object.keys(selectedOptions).map((key, index) => (
+            <input 
+              type="hidden" 
+              key={index}
+              name={`properties[${key}]`} 
+              value={selectedOptions[key]} 
+            />
+          ))}
+          <input type="hidden" name="_bundle_selection" value={bundleSelection} /> */}
           <input
             name="analytics"
             type="hidden"
@@ -353,7 +454,11 @@ const PRODUCT_FRAGMENT = `#graphql
     }
     selectedVariant: variantBySelectedOptions(selectedOptions: $selectedOptions) {
       ...ProductVariant
-      metafield(namespace: "simple_bundles", key: "bundled_variants") {
+      bundledVariantsMetafield: metafield(namespace: "simple_bundles", key: "bundled_variants") {
+        value
+        type
+      }
+      variantOptionsMetafield: metafield(namespace: "simple_bundles", key: "variant_options_v2") {
         value
         type
       }
@@ -361,7 +466,11 @@ const PRODUCT_FRAGMENT = `#graphql
     variants(first: 1) {
       nodes {
         ...ProductVariant
-        metafield(namespace: "simple_bundles", key: "bundled_variants") {
+        bundledVariantsMetafield: metafield(namespace: "simple_bundles", key: "bundled_variants") {
+          value
+          type
+        }
+        variantOptionsMetafield: metafield(namespace: "simple_bundles", key: "variant_options_v2") {
           value
           type
         }
