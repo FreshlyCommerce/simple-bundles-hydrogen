@@ -240,12 +240,17 @@ function BundleOptionSelect({ voMetafield, onBundleChange }) {
     }
   }, [voMetafield]);
 
+  const [prevBundleString, setPrevBundleString] = useState(null);
+
   useEffect(() => {
     const bundleString = Object.values(selectedOptions).join(' <> ');
-    setBundleSelection(bundleString);
-    console.log(`_bundle_selection: ${bundleString}`);
-    onBundleChange(bundleString, selectedOptions); // Pass the data back to the parent
-  }, [selectedOptions]);
+
+    if (bundleString !== prevBundleString) {
+      setBundleSelection(bundleString);
+      setPrevBundleString(bundleString); // update the previous value
+      onBundleChange(bundleString, selectedOptions);
+    }
+  }, [selectedOptions, prevBundleString]);
 
   const handleSelectChange = (e, optionName) => {
     setSelectedOptions({
