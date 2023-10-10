@@ -159,7 +159,6 @@ function ProductMain({ selectedVariant, product, variants }) {
     }
   }
 
-  // console.log(voMetafieldString)
 
   // Check if metafield[0].type is "Infinite options"
   const isInfiniteOptions = bvMetafield?.[0]?.type === "Infinite options";
@@ -340,6 +339,8 @@ function ProductForm({product, selectedVariant, variants, bundleSelection, selec
               ]
             : []
         }
+        bundleSelection={bundleSelection}
+        selectedOptions={selectedOptions}
       >
         {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
       </AddToCartButton>
@@ -380,21 +381,23 @@ function AddToCartButton({analytics, children, disabled, lines, onClick, bundleS
   return (
     <CartForm route="/cart" inputs={{lines}} action={CartForm.ACTIONS.LinesAdd}>
       {(fetcher) => (
-        <>
-          {/* {Object.keys(selectedOptions).map((key, index) => (
-            <input 
-              type="hidden" 
-              key={index}
-              name={`properties[${key}]`} 
-              value={selectedOptions[key]} 
-            />
+        <> 
+          {/* Generate hidden fields */}
+          {Object.keys(selectedOptions).map((key, index) => (
+          <input 
+            type="hidden" 
+            key={index}
+            name={`properties[${key}]`} 
+            value={selectedOptions[key]} 
+          />
           ))}
-          <input type="hidden" name="_bundle_selection" value={bundleSelection} /> */}
+          <input type="hidden" name="_bundle_selection" value={bundleSelection} />
           <input
             name="analytics"
             type="hidden"
             value={JSON.stringify(analytics)}
           />
+          <input name="_bundle_selection" type="hidden" value={bundleSelection} />
           <button
             type="submit"
             onClick={onClick}
