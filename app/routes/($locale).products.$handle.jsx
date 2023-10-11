@@ -150,7 +150,7 @@ function ProductMain({ selectedVariant, product, variants }) {
   let bvMetafield = null;
   if (bvMetafieldString) {
     try {
-      const bvMetafield = JSON.parse(bvMetafieldString);
+      bvMetafield = JSON.parse(bvMetafieldString);
     } catch (e) {
       console.error("Invalid JSON string:", e);
     }
@@ -174,7 +174,6 @@ function ProductMain({ selectedVariant, product, variants }) {
   const bundleItemsComponent = !isInfiniteOptions && bvMetafield?.length > 0 && (
     <BundleItems bundleItems={bvMetafield} />
   );
-
 
   return (
     <div className="product-main">
