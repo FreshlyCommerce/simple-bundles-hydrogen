@@ -326,6 +326,27 @@ function ProductForm({product, selectedVariant, variants, voMetafield }) {
   if (bundleSelection) {
     console.log(bundleSelection);
   }
+
+  let lines = [];
+  if (selectedVariant) {
+    const line = {
+      merchandiseId: selectedVariant.id,
+      quantity: 1,
+    };
+    
+    if (Object.keys(selectedOptions).length > 0 || bundleSelection) {
+      line.attributes = Object.keys(selectedOptions).map(key => ({
+        key: key,
+        value: selectedOptions[key]
+      })).concat({
+        key: '_bundle_selection',
+        value: bundleSelection
+      });
+    }
+
+    lines.push(line);
+  }
+
   return (
     <div className="product-form">
       <VariantSelector
@@ -343,26 +364,9 @@ function ProductForm({product, selectedVariant, variants, voMetafield }) {
         onClick={() => {
           window.location.href = window.location.href + '#cart-aside';
         }}
-        lines={
-          selectedVariant
-            ? [
-                {
-                  merchandiseId: selectedVariant.id,
-                  quantity: 1,
-                  attributes: Object.keys(selectedOptions).map(key => ({
-                    key: key,
-                    value: selectedOptions[key]
-                  })).concat({
-                    key: '_bundle_selection',
-                    value: bundleSelection
-                  })
-                },
-              ]
-            : []
-        }
+        lines={lines}
         bundleSelection={bundleSelection}
         selectedOptions={selectedOptions}
-        
       >
         {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
       </AddToCartButton>
