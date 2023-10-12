@@ -119,6 +119,7 @@ function BundleItems({bundleItems}) {
       <p>
         <strong>This bundle includes:</strong>
       </p>
+      <br />
       <ul>
         {bundleItems.map((bundle, index) => (
           <li key={index}>
@@ -138,11 +139,18 @@ function BundleItems({bundleItems}) {
 
 ```javascript
 function ProductMain({selectedVariant, product, variants}) {
-  // Assuming you have a JSON string stored in selectedVariant.metafield.value
-  const metafieldString = selectedVariant?.metafield?.value;
+  // Get value from Product Bundled Variant Metafield
+  const bvMetafieldString = selectedVariant?.bundledVariantsMetafield?.value;
 
-  // Parse the JSON string into a JavaScript object
-  const metafield = JSON.parse(metafieldString);
+  // Parse if Bundle Varient Metafield exists
+  let bvMetafield = null;
+  if (bvMetafieldString) {
+    try {
+      bvMetafield = JSON.parse(bvMetafieldString);
+    } catch (e) {
+      console.error('Invalid JSON string:', e);
+    }
+  }
 
   // Check if metafield[0].type is "Infinite options"
   const isInfiniteOptions = metafield?.[0]?.type === 'Infinite options';
