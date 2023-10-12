@@ -166,7 +166,6 @@ function ProductMain({ selectedVariant, product, variants }) {
     }
   }
 
-
   // Check if metafield[0].type is "Infinite options"
   const isInfiniteOptions = bvMetafield?.[0]?.type === "Infinite options";
 
@@ -402,7 +401,7 @@ function ProductOptions({option}) {
   );
 }
 
-function AddToCartButton({analytics, children, disabled, lines, onClick, bundleSelection, selectedOptions}) {
+function AddToCartButton({analytics, children, disabled, lines, onClick}) {
   return (
     <CartForm route="/cart" inputs={{lines}} action={CartForm.ACTIONS.LinesAdd}>
       {(fetcher) => (
