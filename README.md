@@ -40,6 +40,7 @@ npm run dev
 ```
 
 ## Add Bundle Product Items
+
 1. Make metafields available by installing the [Shopify GraphiQL App](https://shopify-graphiql-app.shopifycloud.com/login)
 2. Make sure all necessary permissions are added
 3. Add mutation code inside GraphiQL app
@@ -63,6 +64,7 @@ mutation {
   }
 }
 ```
+
 You should get a response similar to this:
 
 ```javascript
@@ -111,18 +113,22 @@ variants(first: 1) {
 5. Create a component for your bundled items
 
 ```javascript
-function BundleItems({ bundleItems }) {
+function BundleItems({bundleItems}) {
   return (
     <div>
-      <p><strong>This bundle includes:</strong></p>
+      <p>
+        <strong>This bundle includes:</strong>
+      </p>
       <ul>
-      {bundleItems.map((bundle, index) => (
-        <li key={index}>
-          {bundle.quantity_in_bundle} x {bundle.product_title}
-          {bundle.variant_title !== "Default Title" ? ` - ${bundle.variant_title}` : ''}
-        </li>
-      ))}
-    </ul>
+        {bundleItems.map((bundle, index) => (
+          <li key={index}>
+            {bundle.quantity_in_bundle} x {bundle.product_title}
+            {bundle.variant_title !== 'Default Title'
+              ? ` - ${bundle.variant_title}`
+              : ''}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -132,36 +138,236 @@ function BundleItems({ bundleItems }) {
 
 ```javascript
 function ProductMain({selectedVariant, product, variants}) {
+  // Assuming you have a JSON string stored in selectedVariant.metafield.value
+  const metafieldString = selectedVariant?.metafield?.value;
 
-	// Assuming you have a JSON string stored in selectedVariant.metafield.value
-	const metafieldString = selectedVariant?.metafield?.value;
-
-	// Parse the JSON string into a JavaScript object
-	const metafield = JSON.parse(metafieldString);
+  // Parse the JSON string into a JavaScript object
+  const metafield = JSON.parse(metafieldString);
 
   // Check if metafield[0].type is "Infinite options"
-  const isInfiniteOptions = metafield?.[0]?.type === "Infinite options";
+  const isInfiniteOptions = metafield?.[0]?.type === 'Infinite options';
 
   // Conditionally render the BundleItems component. Hide if type is Infinite options or non-bundle product.
   const bundleItemsComponent = !isInfiniteOptions && metafield?.length > 0 && (
     <BundleItems bundleItems={metafield} />
   );
 
-	// Rest of your code ..
+  // Rest of your code ..
 }
 ```
 
 7. Add the bundleItems component expression within your main product component
 
 ```javascript
-function ProductMain({ selectedVariant, product, variants }) {
+function ProductMain({selectedVariant, product, variants}) {
   // Rest of code
   return (
     // Rest of code
     {bundleItemsComponent}
     // Rest of code
-  )
+  );
 }
 ```
 
 8. You should see the bundle items for each bundle, based on bundle variants. Check bundled products with infinite options or non-bundled products to make sure the bundled items component don't appear.
+
+## Add Infinite Bundle Product Select Options
+
+1. **Adjust import react:**
+
+   ```jsx
+   import React, {useState, useEffect, Suspense} from 'react';
+   ```
+
+2. **Import metafield data from Shopify and parse the JSON:**
+
+   ```jsx
+   // Get value from Product Bundled Variant Metafield
+   const bvMetafieldString = selectedVariant?.bundledVariantsMetafield?.value;
+   // Get value from Product Variant Options v2 Metafield
+   const voMetafieldString = selectedVariant?.variantOptionsMetafield?.value;
+
+   // Parse if Bundle Varient Metafield exists
+   let bvMetafield = null;
+   if (bvMetafieldString) {
+     try {
+       bvMetafield = JSON.parse(bvMetafieldString);
+     } catch (e) {
+       console.error('Invalid JSON string:', e);
+     }
+   }
+
+   // Parse if Build a Bundle metafields exist
+   let voMetafield = null;
+   if (voMetafieldString) {
+     try {
+       voMetafield = JSON.parse(voMetafieldString);
+     } catch (e) {
+       console.error('Invalid JSON string:', e);
+     }
+   }
+   ```
+
+3. **Create component to display the bundled options as select fields:**
+
+   ```jsx
+   // Define Bundle Option Select component
+   function BundleOptionSelect({voMetafield, handleBundleChange}) {
+     const [bundleSelection, setBundleSelection] = useState('');
+     const [selectedOptions, setSelectedOptions] = useState({});
+
+     // Initialize selectedOptions with the first value from each select field
+     useEffect(() => {
+       if (voMetafield) {
+         const initialOptions = {};
+         voMetafield.forEach((optionGroup) => {
+           const optionName = optionGroup[0].optionName;
+           const optionValues = optionGroup[0].optionValues.split(', ');
+           initialOptions[optionName] = optionValues[0];
+         });
+         setSelectedOptions(initialOptions);
+       }
+     }, [voMetafield]);
+
+     const [prevBundleString, setPrevBundleString] = useState(null);
+
+     useEffect(() => {
+       const bundleString = Object.values(selectedOptions).join(' <> ');
+
+       if (bundleString !== prevBundleString) {
+         setBundleSelection(bundleString);
+         setPrevBundleString(bundleString);
+         handleBundleChange(bundleString, selectedOptions);
+       }
+       console.log(selectedOptions);
+     }, [selectedOptions, prevBundleString]);
+
+     const handleSelectChange = (e, optionName) => {
+       setSelectedOptions({
+         ...selectedOptions,
+         [optionName]: e.target.value,
+       });
+     };
+
+     return (
+       <div>
+         {voMetafield
+           ? voMetafield.map((optionGroup, index) => {
+               const optionName = optionGroup[0].optionName;
+               const optionValues = optionGroup[0].optionValues.split(', ');
+               const isLastItem = index === voMetafield.length - 1;
+               return (
+                 <div key={index}>
+                   <label>{optionName}</label>
+                   <br />
+                   <select
+                     name={optionName}
+                     onChange={(e) => handleSelectChange(e, optionName)}
+                   >
+                     {optionValues.map((value, i) => (
+                       <option key={i} value={value}>
+                         {value}
+                       </option>
+                     ))}
+                   </select>
+                   {!isLastItem && (
+                     <>
+                       <br />
+                       <br />
+                     </>
+                   )}
+                 </div>
+               );
+             })
+           : null}
+
+         {/* Generate hidden fields */}
+         {Object.keys(selectedOptions).map((key, index) => (
+           <input
+             type="hidden"
+             key={index}
+             name={`properties[${key}]`}
+             value={selectedOptions[key]}
+           />
+         ))}
+         <input
+           type="hidden"
+           name="_bundle_selection"
+           value={bundleSelection}
+         />
+       </div>
+     );
+   }
+   ```
+
+4. **Update ProductForm component to include the BundleOptionSelect component and include code that recognizes the changes in the Select options to send that data to the cart:**
+
+   ```jsx
+   function ProductForm({product, selectedVariant, variants, voMetafield}) {
+     const [bundleSelection, setBundleSelection] = useState('');
+     const [selectedOptions, setSelectedOptions] = useState({});
+     const handleBundleChange = (bundleString, options) => {
+       setBundleSelection(bundleString);
+       setSelectedOptions(options);
+     };
+
+     if (bundleSelection) {
+       console.log(bundleSelection);
+     }
+
+     let lines = [];
+     if (selectedVariant) {
+       const line = {
+         merchandiseId: selectedVariant.id,
+         quantity: 1,
+       };
+
+       if (Object.keys(selectedOptions).length > 0 || bundleSelection) {
+         line.attributes = Object.keys(selectedOptions)
+           .map((key) => ({
+             key: key,
+             value: selectedOptions[key],
+           }))
+           .concat({
+             key: '_bundle_selection',
+             value: bundleSelection,
+           });
+       }
+
+       lines.push(line);
+     }
+
+     return (
+       <div className="product-form">
+         <VariantSelector
+           handle={product.handle}
+           options={product.options}
+           variants={variants}
+         >
+           {({option}) => <ProductOptions key={option.name} option={option} />}
+         </VariantSelector>
+         <br />
+         <BundleOptionSelect
+           voMetafield={voMetafield}
+           handleBundleChange={handleBundleChange}
+         />
+         <br />
+         <AddToCartButton
+           disabled={!selectedVariant || !selectedVariant.availableForSale}
+           onClick={() => {
+             window.location.href = window.location.href + '#cart-aside';
+           }}
+           lines={lines}
+           bundleSelection={bundleSelection}
+           selectedOptions={selectedOptions}
+         >
+           {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
+         </AddToCartButton>
+       </div>
+     );
+   }
+   ```
+
+5. **Testing:**
+   - Test Infinite Bundle Options products to make sure select fields show up for each product in the bundle.
+   - Also, ensure that the products show up in the cart/checkout.
