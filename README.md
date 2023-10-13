@@ -45,7 +45,7 @@ npm run dev
 2. Make sure all necessary permissions are added
 3. Add mutation code inside GraphiQL app
 
-```javascript
+```jsx
 mutation {
   metafieldStorefrontVisibilityCreate(
     input: {
@@ -67,7 +67,7 @@ mutation {
 
 You should get a response similar to this:
 
-```javascript
+```jsx
 {
   "data": {
     "metafieldStorefrontVisibilityCreate": {
@@ -93,7 +93,7 @@ You should get a response similar to this:
 
 4. Once metafields are exposed, add the metafields within your product > variants and product > selectedVariables query
 
-```javascript
+```jsx
 selectedVariant: variantBySelectedOptions(selectedOptions: $selectedOptions) {
   metafield(namespace: "simple_bundles", key: "bundled_variants") {
     value
@@ -112,7 +112,7 @@ variants(first: 1) {
 
 5. Create a component for your bundled items
 
-```javascript
+```jsx
 function BundleItems({bundleItems}) {
   return (
     <div>
@@ -137,7 +137,7 @@ function BundleItems({bundleItems}) {
 
 6. Reference and parse the JSON of the metafield string in your main Product component. Also add in conditions for if bundle has Infinite Options or if its a non-bundled product.
 
-```javascript
+```jsx
 function ProductMain({selectedVariant, product, variants}) {
   // Get value from Product Bundled Variant Metafield
   const bvMetafieldString = selectedVariant?.bundledVariantsMetafield?.value;
@@ -166,7 +166,7 @@ function ProductMain({selectedVariant, product, variants}) {
 
 7. Add the bundleItems component expression within your main product component
 
-```javascript
+```jsx
 function ProductMain({selectedVariant, product, variants}) {
   // Rest of code
   return (
@@ -181,13 +181,72 @@ function ProductMain({selectedVariant, product, variants}) {
 
 ## Add Infinite Bundle Product Select Options
 
-1. **Adjust import react:**
+1. **Expose Variant Options and Variant Options v2 Metafields**
+
+```jsx
+mutation {
+  metafieldStorefrontVisibilityCreate(
+    input: {
+      namespace: "simple_bundles"
+      key: "variant_options_v2" // Switch out variant_options for variant_options_v2
+      ownerType: PRODUCT
+    }
+  ) {
+    metafieldStorefrontVisibility {
+      id
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}
+```
+
+2. **Update GraphQL to import both variant options metafields within your PRODUCT_FRAGMENT query**
+
+```jsx
+selectedVariant: variantBySelectedOptions(selectedOptions: $selectedOptions) {
+  ...ProductVariant
+  bundledVariantsMetafield: metafield(namespace: "simple_bundles", key: "bundled_variants") {
+    value
+    type
+  }
+  variantOptionsMetafield: metafield(namespace: "simple_bundles", key: "variant_options") {
+    value
+    type
+  }
+  variantOptionsv2Metafield: metafield(namespace: "simple_bundles", key: "variant_options_v2") {
+    value
+    type
+  }
+}
+variants(first: 1) {
+  nodes {
+    ...ProductVariant
+    bundledVariantsMetafield: metafield(namespace: "simple_bundles", key: "bundled_variants") {
+      value
+      type
+    }
+    variantOptionsMetafield: metafield(namespace: "simple_bundles", key: "variant_options") {
+      value
+      type
+    }
+    variantOptionsv2Metafield: metafield(namespace: "simple_bundles", key: "variant_options_v2") {
+      value
+      type
+    }
+  }
+}
+```
+
+3. **Adjust import react:**
 
    ```jsx
    import React, {useState, useEffect, Suspense} from 'react';
    ```
 
-2. **Import metafield data from Shopify and parse the JSON:**
+4. **Import metafield data from Shopify and parse the JSON:**
 
    ```jsx
    // Get value from Product Bundled Variant Metafield
@@ -216,7 +275,7 @@ function ProductMain({selectedVariant, product, variants}) {
    }
    ```
 
-3. **Create component to display the bundled options as select fields:**
+5. **Create component to display the bundled options as select fields:**
 
    ```jsx
    // Define Bundle Option Select component
@@ -308,7 +367,7 @@ function ProductMain({selectedVariant, product, variants}) {
    }
    ```
 
-4. **Update ProductForm component to include the BundleOptionSelect component and include code that recognizes the changes in the Select options to send that data to the cart:**
+6. **Update ProductForm component to include the BundleOptionSelect component and include code that recognizes the changes in the Select options to send that data to the cart:**
 
    ```jsx
    function ProductForm({product, selectedVariant, variants, voMetafield}) {
@@ -376,6 +435,6 @@ function ProductMain({selectedVariant, product, variants}) {
    }
    ```
 
-5. **Testing:**
+7. **Testing:**
    - Test Infinite Bundle Options products to make sure select fields show up for each product in the bundle.
    - Also, ensure that the products show up in the cart/checkout.

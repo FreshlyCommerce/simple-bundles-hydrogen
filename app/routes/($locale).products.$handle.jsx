@@ -141,10 +141,13 @@ function BundleItems({ bundleItems }) {
 function ProductMain({ selectedVariant, product, variants }) {
   const { title, descriptionHtml } = product;
 
+  console.log("PRO:",product)
   // Get value from Product Bundled Variant Metafield
   const bvMetafieldString = selectedVariant?.bundledVariantsMetafield?.value;
-  // Get value from Product Variant Options v2 Metafield
+  // Get value from Product Variant Options Metafield
   const voMetafieldString = selectedVariant?.variantOptionsMetafield?.value;
+  // Get value from Product Variant Options v2 Metafield
+  const voMetafieldv2String = selectedVariant?.variantOptionsv2Metafield?.value;
   
   // Parse if Bundle Varient Metafield exists
   let bvMetafield = null;
@@ -156,7 +159,7 @@ function ProductMain({ selectedVariant, product, variants }) {
     }
   }
   
-  // Parse if Build a Bundle metafields exist
+  // Parse if Variant Options metafields exist
   let voMetafield = null;
   if (voMetafieldString) {
     try {
@@ -165,6 +168,19 @@ function ProductMain({ selectedVariant, product, variants }) {
       console.error("Invalid JSON string:", e);
     }
   }
+
+  // Parse if Variant Options v2 metafields exist
+  let voMetafieldv2 = null;
+  if (voMetafieldv2String) {
+    try {
+      voMetafieldv2 = JSON.parse(voMetafieldv2String);
+    } catch (e) {
+      console.error("Invalid JSON string:", e);
+    }
+  }
+
+
+  console.log("vo",voMetafieldString)
 
   // Check if metafield[0].type is "Infinite options"
   const isInfiniteOptions = bvMetafield?.[0]?.type === "Infinite options";
@@ -197,7 +213,7 @@ function ProductMain({ selectedVariant, product, variants }) {
               product={product}
               selectedVariant={selectedVariant}
               variants={data.product?.variants.nodes || []}
-              voMetafield={voMetafield}
+              voMetafieldv2={voMetafieldv2}
               bvMetafield={bvMetafield}
             />
           )}
@@ -218,22 +234,22 @@ function ProductMain({ selectedVariant, product, variants }) {
 }
 
 // Define Bundle Option Select component
-function BundleOptionSelect({ voMetafield, handleBundleChange }) {
+function BundleOptionSelect({ voMetafieldv2, handleBundleChange }) {
   const [bundleSelection, setBundleSelection] = useState('');
   const [selectedOptions, setSelectedOptions] = useState({});
 
   // Initialize selectedOptions with the first value from each select field
   useEffect(() => {
-    if (voMetafield) {
+    if (voMetafieldv2) {
       const initialOptions = {};
-      voMetafield.forEach((optionGroup) => {
+      voMetafieldv2.forEach((optionGroup) => {
         const optionName = optionGroup[0].optionName;
         const optionValues = optionGroup[0].optionValues.split(", ");
         initialOptions[optionName] = optionValues[0]; 
       });
       setSelectedOptions(initialOptions);
     }
-  }, [voMetafield]);
+  }, [voMetafieldv2]);
 
   const [prevBundleString, setPrevBundleString] = useState(null);
 
@@ -245,7 +261,6 @@ function BundleOptionSelect({ voMetafield, handleBundleChange }) {
       setPrevBundleString(bundleString); 
       handleBundleChange(bundleString, selectedOptions);
     }
-    console.log(selectedOptions)
   }, [selectedOptions, prevBundleString]);
 
   const handleSelectChange = (e, optionName) => {
@@ -257,11 +272,11 @@ function BundleOptionSelect({ voMetafield, handleBundleChange }) {
   
   return (
     <div>
-      {voMetafield ? (
-        voMetafield.map((optionGroup, index) => {
+      {voMetafieldv2 ? (
+        voMetafieldv2.map((optionGroup, index) => {
           const optionName = optionGroup[0].optionName;
           const optionValues = optionGroup[0].optionValues.split(", ");
-          const isLastItem = index === voMetafield.length - 1;
+          const isLastItem = index === voMetafieldv2.length - 1;
           return (
             <div key={index}>
               <label>{optionName}</label><br />
@@ -313,17 +328,13 @@ function ProductPrice({selectedVariant}) {
   );
 }
 
-function ProductForm({product, selectedVariant, variants, voMetafield }) {
+function ProductForm({product, selectedVariant, variants, voMetafieldv2 }) {
   const [bundleSelection, setBundleSelection] = useState('');
   const [selectedOptions, setSelectedOptions] = useState({});
   const handleBundleChange = (bundleString, options) => {
     setBundleSelection(bundleString);
     setSelectedOptions(options);
   };
-
-  if (bundleSelection) {
-    console.log(bundleSelection);
-  }
 
   let lines = [];
   if (selectedVariant) {
@@ -355,7 +366,7 @@ function ProductForm({product, selectedVariant, variants, voMetafield }) {
         {({option}) => <ProductOptions key={option.name} option={option} />}
       </VariantSelector>
       <br />
-      <BundleOptionSelect voMetafield={voMetafield} handleBundleChange={handleBundleChange} />
+      <BundleOptionSelect voMetafieldv2={voMetafieldv2} handleBundleChange={handleBundleChange} />
       <br />
       <AddToCartButton
         disabled={!selectedVariant || !selectedVariant.availableForSale}
@@ -479,7 +490,11 @@ const PRODUCT_FRAGMENT = `#graphql
         value
         type
       }
-      variantOptionsMetafield: metafield(namespace: "simple_bundles", key: "variant_options_v2") {
+      variantOptionsMetafield: metafield(namespace: "simple_bundles", key: "variant_options") {
+        value
+        type
+      }
+      variantOptionsv2Metafield: metafield(namespace: "simple_bundles", key: "variant_options_v2") {
         value
         type
       }
@@ -491,7 +506,11 @@ const PRODUCT_FRAGMENT = `#graphql
           value
           type
         }
-        variantOptionsMetafield: metafield(namespace: "simple_bundles", key: "variant_options_v2") {
+        variantOptionsMetafield: metafield(namespace: "simple_bundles", key: "variant_options") {
+          value
+          type
+        }
+        variantOptionsv2Metafield: metafield(namespace: "simple_bundles", key: "variant_options_v2") {
           value
           type
         }
