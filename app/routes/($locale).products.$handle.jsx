@@ -147,7 +147,7 @@ function ProductMain({ selectedVariant, product, variants }) {
   const voMetafieldString = selectedVariant?.variantOptionsMetafield?.value;
   // Get value from Product Variant Options v2 Metafield
   const voMetafieldv2String = selectedVariant?.variantOptionsv2Metafield?.value;
-  
+
   // Parse if Bundle Varient Metafield exists
   let bvMetafield = null;
   if (bvMetafieldString) {
@@ -157,7 +157,7 @@ function ProductMain({ selectedVariant, product, variants }) {
       console.error("Invalid JSON string:", e);
     }
   }
-  
+
   // Parse if Variant Options metafields exist
   let voMetafield = null;
   if (voMetafieldString) {
@@ -242,7 +242,7 @@ function BundleOptionSelect({ voMetafield, voMetafieldv2, handleBundleChange }) 
       voMetafieldv2.forEach((optionGroup) => {
         const optionName = optionGroup[0].optionName;
         const optionValues = optionGroup[0].optionValues.split(", ");
-        initialOptions[optionName] = optionValues[0]; 
+        initialOptions[optionName] = optionValues[0];
       });
       setSelectedOptions(initialOptions);
     }
@@ -255,7 +255,7 @@ function BundleOptionSelect({ voMetafield, voMetafieldv2, handleBundleChange }) 
 
     if (bundleString !== prevBundleString) {
       setBundleSelection(bundleString);
-      setPrevBundleString(bundleString); 
+      setPrevBundleString(bundleString);
       handleBundleChange(bundleString, selectedOptions);
     }
   }, [selectedOptions, prevBundleString]);
@@ -266,7 +266,7 @@ function BundleOptionSelect({ voMetafield, voMetafieldv2, handleBundleChange }) 
       [optionName]: e.target.value,
     });
   };
-  
+
   return (
   <div>
     {voMetafieldv2 ? (
@@ -278,7 +278,7 @@ function BundleOptionSelect({ voMetafield, voMetafieldv2, handleBundleChange }) 
 
         if (voMetafield) {
           const matchingInventory = voMetafield.find(item => item.optionName === optionName);
-          inventories = matchingInventory ? matchingInventory.optionInventories.split(",") : [];
+          inventories = matchingInventory ? matchingInventory.optionInventories.split(",").map(value => parseInt(value, 10)): [];
         }
         const isLastItem = index === voMetafieldv2.length - 1;
 
@@ -287,11 +287,15 @@ function BundleOptionSelect({ voMetafield, voMetafieldv2, handleBundleChange }) 
             <label>{optionName}</label><br />
             <select name={optionName} onChange={(e) => handleSelectChange(e, optionName)}>
               {optionValues.map((value, i) => (
-                inventories[i] !== '0' ? (
+                inventories[i] > 0 ? (
                   <option key={i} value={value}>
                     {value}
                   </option>
-                ) : null
+                ) : (
+                  <option key={i} value={value} disabled>
+                    {value}
+                  </option>
+                )
               ))}
             </select>
             {!isLastItem && <><br /><br /></>}
@@ -302,11 +306,11 @@ function BundleOptionSelect({ voMetafield, voMetafieldv2, handleBundleChange }) 
 
       {/* Generate hidden fields */}
       {Object.keys(selectedOptions).map((key, index) => (
-        <input 
-          type="hidden" 
+        <input
+          type="hidden"
           key={index}
-          name={`properties[${key}]`} 
-          value={selectedOptions[key]} 
+          name={`properties[${key}]`}
+          value={selectedOptions[key]}
         />
       ))}
       <input type="hidden" name="_bundle_selection" value={bundleSelection} />
@@ -349,7 +353,7 @@ function ProductForm({product, selectedVariant, variants, voMetafield, voMetafie
       merchandiseId: selectedVariant.id,
       quantity: 1,
     };
-    
+
     if (Object.keys(selectedOptions).length > 0 || bundleSelection) {
       line.attributes = Object.keys(selectedOptions).map(key => ({
         key: key,
@@ -423,7 +427,7 @@ function AddToCartButton({analytics, children, disabled, lines, onClick}) {
   return (
     <CartForm route="/cart" inputs={{lines}} action={CartForm.ACTIONS.LinesAdd}>
       {(fetcher) => (
-        <> 
+        <>
           <input
             name="analytics"
             type="hidden"
