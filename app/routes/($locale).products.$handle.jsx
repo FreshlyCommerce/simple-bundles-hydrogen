@@ -141,7 +141,6 @@ function BundleItems({ bundleItems }) {
 function ProductMain({ selectedVariant, product, variants }) {
   const { title, descriptionHtml } = product;
 
-  console.log("PRO:",product)
   // Get value from Product Bundled Variant Metafield
   const bvMetafieldString = selectedVariant?.bundledVariantsMetafield?.value;
   // Get value from Product Variant Options Metafield
@@ -179,9 +178,6 @@ function ProductMain({ selectedVariant, product, variants }) {
     }
   }
 
-
-  console.log("vo",voMetafieldString)
-
   // Check if metafield[0].type is "Infinite options"
   const isInfiniteOptions = bvMetafield?.[0]?.type === "Infinite options";
 
@@ -213,6 +209,7 @@ function ProductMain({ selectedVariant, product, variants }) {
               product={product}
               selectedVariant={selectedVariant}
               variants={data.product?.variants.nodes || []}
+              voMetafield={voMetafield}
               voMetafieldv2={voMetafieldv2}
               bvMetafield={bvMetafield}
             />
@@ -234,7 +231,7 @@ function ProductMain({ selectedVariant, product, variants }) {
 }
 
 // Define Bundle Option Select component
-function BundleOptionSelect({ voMetafieldv2, handleBundleChange }) {
+function BundleOptionSelect({ voMetafield, voMetafieldv2, handleBundleChange }) {
   const [bundleSelection, setBundleSelection] = useState('');
   const [selectedOptions, setSelectedOptions] = useState({});
 
@@ -271,27 +268,37 @@ function BundleOptionSelect({ voMetafieldv2, handleBundleChange }) {
   };
   
   return (
-    <div>
-      {voMetafieldv2 ? (
-        voMetafieldv2.map((optionGroup, index) => {
-          const optionName = optionGroup[0].optionName;
-          const optionValues = optionGroup[0].optionValues.split(", ");
-          const isLastItem = index === voMetafieldv2.length - 1;
-          return (
-            <div key={index}>
-              <label>{optionName}</label><br />
-              <select name={optionName} onChange={(e) => handleSelectChange(e, optionName)}>
-                {optionValues.map((value, i) => (
+  <div>
+    {voMetafieldv2 ? (
+      voMetafieldv2.map((optionGroup, index) => {
+        const optionName = optionGroup[0].optionName;
+        const optionValues = optionGroup[0].optionValues.split(", ");
+
+        let inventories = [];
+
+        if (voMetafield) {
+          const matchingInventory = voMetafield.find(item => item.optionName === optionName);
+          inventories = matchingInventory ? matchingInventory.optionInventories.split(",") : [];
+        }
+        const isLastItem = index === voMetafieldv2.length - 1;
+
+        return (
+          <div key={index}>
+            <label>{optionName}</label><br />
+            <select name={optionName} onChange={(e) => handleSelectChange(e, optionName)}>
+              {optionValues.map((value, i) => (
+                inventories[i] !== '0' ? (
                   <option key={i} value={value}>
                     {value}
                   </option>
-                ))}
-              </select>
-              {!isLastItem && <><br /><br /></>}
-            </div>
-          );
-        })
-      ) : null}
+                ) : null
+              ))}
+            </select>
+            {!isLastItem && <><br /><br /></>}
+          </div>
+        );
+      })
+    ) : null}
 
       {/* Generate hidden fields */}
       {Object.keys(selectedOptions).map((key, index) => (
@@ -328,7 +335,7 @@ function ProductPrice({selectedVariant}) {
   );
 }
 
-function ProductForm({product, selectedVariant, variants, voMetafieldv2 }) {
+function ProductForm({product, selectedVariant, variants, voMetafield, voMetafieldv2 }) {
   const [bundleSelection, setBundleSelection] = useState('');
   const [selectedOptions, setSelectedOptions] = useState({});
   const handleBundleChange = (bundleString, options) => {
@@ -366,7 +373,7 @@ function ProductForm({product, selectedVariant, variants, voMetafieldv2 }) {
         {({option}) => <ProductOptions key={option.name} option={option} />}
       </VariantSelector>
       <br />
-      <BundleOptionSelect voMetafieldv2={voMetafieldv2} handleBundleChange={handleBundleChange} />
+      <BundleOptionSelect voMetafield={voMetafield} voMetafieldv2={voMetafieldv2} handleBundleChange={handleBundleChange} />
       <br />
       <AddToCartButton
         disabled={!selectedVariant || !selectedVariant.availableForSale}
