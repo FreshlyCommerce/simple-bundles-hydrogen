@@ -140,6 +140,7 @@ function BundleItems({ bundleItems }) {
 
 function ProductMain({ selectedVariant, product, variants }) {
   const { title, descriptionHtml } = product;
+  console.log("PR:::",product)
 
   // Get value from Product Bundled Variant Metafield
   const bvMetafieldString = selectedVariant?.bundledVariantsMetafield?.value;
@@ -231,34 +232,50 @@ function ProductMain({ selectedVariant, product, variants }) {
 }
 
 // Define Bundle Option Select component
-function BundleOptionSelect({ voMetafield, voMetafieldv2, handleBundleChange }) {
+function BundleOptionSelect({ selectedVariant, voMetafield, voMetafieldv2, handleBundleChange }) {
   const [bundleSelection, setBundleSelection] = useState('');
   const [selectedOptions, setSelectedOptions] = useState({});
-
+  const [prevBundleString, setPrevBundleString] = useState(null);
   // Initialize selectedOptions with the first value from each select field
+
   useEffect(() => {
     if (voMetafieldv2) {
-      const initialOptions = {};
-      voMetafieldv2.forEach((optionGroup) => {
-        const optionName = optionGroup[0].optionName;
-        const optionValues = optionGroup[0].optionValues.split(", ");
-        initialOptions[optionName] = optionValues[0]; 
+      // Initialization logic
+      if (!prevBundleString) {
+        const initialOptions = {};
+        let initialBundleParts = [];
+
+        voMetafieldv2.forEach((optionGroup) => {
+          const groupParts = optionGroup.map(option => {
+            const optionName = option.optionName;
+            const optionValues = option.optionValues.split(", ");
+            initialOptions[optionName] = optionValues[0];
+            return optionValues[0];
+          }).join(' ++ ');
+
+          initialBundleParts.push(groupParts);
+        });
+
+        const initialBundleString = initialBundleParts.join(' <> ');
+        setSelectedOptions(initialOptions);
+        setBundleSelection(initialBundleString);
+        setPrevBundleString(initialBundleString);
+        handleBundleChange(initialBundleString, initialOptions);
+      }
+
+      // Bundle update logic
+      const bundleParts = voMetafieldv2.map(optionGroup => {
+        return optionGroup.map(option => selectedOptions[option.optionName] || '').join(' ++ ');
       });
-      setSelectedOptions(initialOptions);
+      const bundleString = bundleParts.join(' <> ');
+
+      if (bundleString !== prevBundleString) {
+        setBundleSelection(bundleString);
+        setPrevBundleString(bundleString);
+        handleBundleChange(bundleString, selectedOptions);
+      }
     }
-  }, [voMetafieldv2]);
-
-  const [prevBundleString, setPrevBundleString] = useState(null);
-
-  useEffect(() => {
-    const bundleString = Object.values(selectedOptions).join(' <> ');
-
-    if (bundleString !== prevBundleString) {
-      setBundleSelection(bundleString);
-      setPrevBundleString(bundleString); 
-      handleBundleChange(bundleString, selectedOptions);
-    }
-  }, [selectedOptions, prevBundleString]);
+  }, [selectedOptions, prevBundleString, setPrevBundleString, voMetafield, voMetafieldv2]);
 
   const handleSelectChange = (e, optionName) => {
     setSelectedOptions({
@@ -266,37 +283,38 @@ function BundleOptionSelect({ voMetafield, voMetafieldv2, handleBundleChange }) 
       [optionName]: e.target.value,
     });
   };
-  
+  console.log("bundleSelection:::",bundleSelection)
   return (
   <div>
     {voMetafieldv2 ? (
       voMetafieldv2.map((optionGroup, index) => {
-        const optionName = optionGroup[0].optionName;
-        const optionValues = optionGroup[0].optionValues.split(", ");
+        return optionGroup.map((option, subIndex) => {
+          const optionName = option.optionName;
+          const optionValues = option.optionValues.split(", ");
 
-        let inventories = [];
+          let inventories = [];
 
-        if (voMetafield) {
-          const matchingInventory = voMetafield.find(item => item.optionName === optionName);
-          inventories = matchingInventory ? matchingInventory.optionInventories.split(",") : [];
-        }
-        const isLastItem = index === voMetafieldv2.length - 1;
+          if (voMetafield) {
+            const matchingInventory = voMetafield.find(item => item.optionName === optionName);
+            inventories = matchingInventory ? matchingInventory.optionInventories.split(",") : [];
+          }
 
-        return (
-          <div key={index}>
-            <label>{optionName}</label><br />
-            <select name={optionName} onChange={(e) => handleSelectChange(e, optionName)}>
-              {optionValues.map((value, i) => (
-                inventories[i] !== '0' ? (
-                  <option key={i} value={value}>
-                    {value}
-                  </option>
-                ) : null
-              ))}
-            </select>
-            {!isLastItem && <><br /><br /></>}
-          </div>
-        );
+          return (
+            <div key={`${index}-${subIndex}`}>
+              <label>{optionName}</label><br />
+              <select name={optionName} onChange={(e) => handleSelectChange(e, optionName)}>
+                {optionValues.map((value, i) => (
+                  inventories[i] !== '0' ? (
+                    <option key={i} value={value}>
+                      {value}
+                    </option>
+                  ) : null
+                ))}
+              </select>
+              <br /><br />
+            </div>
+          );
+        });
       })
     ) : null}
 
