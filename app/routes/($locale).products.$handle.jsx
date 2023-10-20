@@ -139,9 +139,8 @@ function BundleItems({ bundleItems }) {
 }
 
 function ProductMain({ selectedVariant, product, variants }) {
+  
   const { title, descriptionHtml } = product;
-  console.log("PR:::",product)
-
   // Get value from Product Bundled Variant Metafield
   const bvMetafieldString = selectedVariant?.bundledVariantsMetafield?.value;
   // Get value from Product Variant Options Metafield
@@ -236,90 +235,116 @@ function BundleOptionSelect({ selectedVariant, voMetafield, voMetafieldv2, handl
   const [bundleSelection, setBundleSelection] = useState('');
   const [selectedOptions, setSelectedOptions] = useState({});
   const [prevBundleString, setPrevBundleString] = useState(null);
+  
   // Initialize selectedOptions with the first value from each select field
-
   useEffect(() => {
     if (voMetafieldv2) {
       // Initialization logic
       if (!prevBundleString) {
+        // Initialize an empty object for storing options and an empty array for bundle parts
         const initialOptions = {};
         let initialBundleParts = [];
 
+        // Iterate through option groups in voMetafieldv2
         voMetafieldv2.forEach((optionGroup) => {
+          // Create a string representing selected options for each group
           const groupParts = optionGroup.map(option => {
             const optionName = option.optionName;
             const optionValues = option.optionValues.split(", ");
-            initialOptions[optionName] = optionValues[0];
-            return optionValues[0];
+            initialOptions[optionName] = optionValues[0]; // Set the initial option value
+            return optionValues[0]; // Return the initial option value
           }).join(' ++ ');
 
+          // Add the group's selected options string to the initial bundle parts array
           initialBundleParts.push(groupParts);
         });
 
+        // Combine initial bundle parts into a single string
         const initialBundleString = initialBundleParts.join(' <> ');
+
+        // Set the selected options, bundle selection, and previous bundle string
         setSelectedOptions(initialOptions);
         setBundleSelection(initialBundleString);
         setPrevBundleString(initialBundleString);
+
+        // Trigger a function to handle bundle changes with initial values
         handleBundleChange(initialBundleString, initialOptions);
       }
 
       // Bundle update logic
       const bundleParts = voMetafieldv2.map(optionGroup => {
+        // Create a string representing selected options for each group
         return optionGroup.map(option => selectedOptions[option.optionName] || '').join(' ++ ');
       });
+
+      // Combine bundle parts into a single string
       const bundleString = bundleParts.join(' <> ');
 
+      // Check if the bundle string has changed
       if (bundleString !== prevBundleString) {
+        // Update bundle selection and previous bundle string
         setBundleSelection(bundleString);
         setPrevBundleString(bundleString);
+
+        // Trigger a function to handle bundle changes with updated values
         handleBundleChange(bundleString, selectedOptions);
       }
     }
   }, [selectedOptions, prevBundleString, setPrevBundleString, voMetafield, voMetafieldv2]);
 
+  // Function to handle changes in selected options
   const handleSelectChange = (e, optionName) => {
     setSelectedOptions({
       ...selectedOptions,
       [optionName]: e.target.value,
     });
   };
-  console.log("bundleSelection:::",bundleSelection)
   return (
-  <div>
-    {voMetafieldv2 ? (
-      voMetafieldv2.map((optionGroup, index) => {
-        return optionGroup.map((option, subIndex) => {
-          const optionName = option.optionName;
-          const optionValues = option.optionValues.split(", ");
+    <div>
+      {voMetafieldv2 ? (
 
-          let inventories = [];
+        // Check if voMetafieldv2 exists and map through its option groups
+        voMetafieldv2.map((optionGroup, index) => {
+          return optionGroup.map((option, subIndex) => {
 
-          if (voMetafield) {
-            const matchingInventory = voMetafield.find(item => item.optionName === optionName);
-            inventories = matchingInventory ? matchingInventory.optionInventories.split(",") : [];
-          }
+            // Extract option name and values
+            const optionName = option.optionName;
+            const optionValues = option.optionValues.split(", ");
 
-          return (
-            <div key={`${index}-${subIndex}`}>
-              <label>{optionName}</label><br />
-              <select name={optionName} onChange={(e) => handleSelectChange(e, optionName)}>
-                {optionValues.map((value, i) => (
-                  inventories[i] !== '0' ? (
-                    <option key={i} value={value}>
-                      {value}
-                    </option>
-                  ) : null
-                ))}
-              </select>
-              <br /><br />
-            </div>
-          );
-        });
-      })
-    ) : null}
+            // Initialize an array to store inventories
+            let inventories = [];
+
+            // Check if voMetafield exists and find a matching inventory
+            if (voMetafield) {
+              const matchingInventory = voMetafield.find(item => item.optionName === optionName);
+              inventories = matchingInventory ? matchingInventory.optionInventories.split(",") : [];
+            }
+
+            // Render a select input for the current option
+            return (
+              <div key={`${index}-${subIndex}`}>
+                <label>{optionName}</label><br />
+                <select name={optionName} onChange={(e) => handleSelectChange(e, optionName)}>
+                  {optionValues.map((value, i) => (
+                    // Map through option values and create options with inventory check
+                    inventories[i] !== '0' ? (
+                      <option key={i} value={value}>
+                        {value}
+                      </option>
+                    ) : null
+                  ))}
+                </select>
+                <br /><br />
+              </div>
+            );
+          });
+        })
+      ) : null}
 
       {/* Generate hidden fields */}
       {Object.keys(selectedOptions).map((key, index) => (
+
+        // Map through selectedOptions and generate hidden input fields
         <input 
           type="hidden" 
           key={index}
@@ -353,22 +378,31 @@ function ProductPrice({selectedVariant}) {
   );
 }
 
-function ProductForm({product, selectedVariant, variants, voMetafield, voMetafieldv2 }) {
+function ProductForm({ product, selectedVariant, variants, voMetafield, voMetafieldv2 }) {
+  // Initialize state for bundle selection and selected options
   const [bundleSelection, setBundleSelection] = useState('');
   const [selectedOptions, setSelectedOptions] = useState({});
+
+  // Define a function to handle bundle changes
   const handleBundleChange = (bundleString, options) => {
     setBundleSelection(bundleString);
     setSelectedOptions(options);
   };
 
+  // Initialize an empty array to store line items
   let lines = [];
+  
+  // Check if a selected variant exists
   if (selectedVariant) {
+    // Create a line item object for the selected variant
     const line = {
       merchandiseId: selectedVariant.id,
       quantity: 1,
     };
-    
+
+    // Check if there are selected options or a bundle selection
     if (Object.keys(selectedOptions).length > 0 || bundleSelection) {
+      // Add attributes to the line item, including selected options and bundle selection
       line.attributes = Object.keys(selectedOptions).map(key => ({
         key: key,
         value: selectedOptions[key]
@@ -378,21 +412,27 @@ function ProductForm({product, selectedVariant, variants, voMetafield, voMetafie
       });
     }
 
+    // Push the line item to the lines array
     lines.push(line);
   }
 
   return (
     <div className="product-form">
+      {/* Render variant selector */}
       <VariantSelector
         handle={product.handle}
         options={product.options}
         variants={variants}
       >
-        {({option}) => <ProductOptions key={option.name} option={option} />}
+        {({ option }) => <ProductOptions key={option.name} option={option} />}
       </VariantSelector>
       <br />
+
+      {/* Render BundleOptionSelect component with relevant props */}
       <BundleOptionSelect voMetafield={voMetafield} voMetafieldv2={voMetafieldv2} handleBundleChange={handleBundleChange} />
       <br />
+
+      {/* Render AddToCartButton with relevant props */}
       <AddToCartButton
         disabled={!selectedVariant || !selectedVariant.availableForSale}
         onClick={() => {
@@ -402,11 +442,13 @@ function ProductForm({product, selectedVariant, variants, voMetafield, voMetafie
         bundleSelection={bundleSelection}
         selectedOptions={selectedOptions}
       >
+        {/* Display appropriate text based on variant availability */}
         {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold out'}
       </AddToCartButton>
     </div>
   );
 }
+
 
 function ProductOptions({option}) {
   return (
