@@ -299,6 +299,8 @@ function BundleOptionSelect({ selectedVariant, voMetafield, voMetafieldv2, handl
       [optionName]: e.target.value,
     });
   };
+
+
   return (
     <div>
       {voMetafieldv2 ? (
@@ -391,30 +393,39 @@ function ProductForm({ product, selectedVariant, variants, voMetafield, voMetafi
 
   // Initialize an empty array to store line items
   let lines = [];
-  
+
   // Check if a selected variant exists
   if (selectedVariant) {
     // Create a line item object for the selected variant
     const line = {
       merchandiseId: selectedVariant.id,
       quantity: 1,
+      attributes: [],
     };
 
+    
     // Check if there are selected options or a bundle selection
     if (Object.keys(selectedOptions).length > 0 || bundleSelection) {
-      // Add attributes to the line item, including selected options and bundle selection
-      line.attributes = Object.keys(selectedOptions).map(key => ({
+      // Add selected options to the attributes array
+      line.attributes = Object.keys(selectedOptions).map((key) => ({
         key: key,
-        value: selectedOptions[key]
-      })).concat({
-        key: '_bundle_selection',
-        value: bundleSelection
-      });
+        value: selectedOptions[key],
+      }));
+
+      // Check if bundleSelection is not empty and add it as an attribute
+      if (bundleSelection) {
+        line.attributes.push({
+          key: '_bundle_selection',
+          value: bundleSelection,
+        });
+      }
     }
 
     // Push the line item to the lines array
     lines.push(line);
   }
+
+  console.log('lines', lines);
 
   return (
     <div className="product-form">

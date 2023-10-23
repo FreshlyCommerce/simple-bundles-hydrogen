@@ -3,7 +3,7 @@ import {Link} from '@remix-run/react';
 import {useVariantUrl} from '~/utils';
 
 export function CartMain({layout, cart}) {
-  // console.log('CartMain', cart)
+  console.log('CartMain', cart)
   const linesCount = Boolean(cart?.lines?.nodes?.length || 0);
   const withDiscount =
     cart &&
