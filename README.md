@@ -47,20 +47,16 @@ npm run dev
 
 ```jsx
 mutation {
-  metafieldStorefrontVisibilityCreate(
-    input: {
+  metafieldDefinitionUpdate(
+    definition: {
       namespace: "simple_bundles"
       key: "bundled_variants"
       ownerType: PRODUCTVARIANT
+      access: { storefront: PUBLIC_READ }
     }
   ) {
-    metafieldStorefrontVisibility {
-      id
-    }
-    userErrors {
-      field
-      message
-    }
+    updatedDefinition { id }
+    userErrors { message }
   }
 }
 ```
@@ -70,22 +66,11 @@ You should get a response similar to this:
 ```jsx
 {
   "data": {
-    "metafieldStorefrontVisibilityCreate": {
-      "metafieldStorefrontVisibility": {
-        "id": "gid://shopify/MetafieldStorefrontVisibility/[xxxxxxxxxx]"
+    "metafieldDefinitionUpdate": {
+      "updatedDefinition": {
+        "id": "gid://shopify/MetafieldDefinition/[xxxxxxxxxx]"
       },
       "userErrors": []
-    }
-  },
-  "extensions": {
-    "cost": {
-      "requestedQueryCost": [xx],
-      "actualQueryCost": [xx],
-      "throttleStatus": {
-        "maximumAvailable": [xx],
-        "currentlyAvailable": [xx],
-        "restoreRate": [xx]
-      }
     }
   }
 }
@@ -185,40 +170,32 @@ function ProductMain({selectedVariant, product, variants}) {
 
 ```jsx
 mutation {
-  metafieldStorefrontVisibilityCreate(
-    input: {
+  metafieldDefinitionUpdate(
+    definition: {
       namespace: "simple_bundles"
       key: "variant_options"
       ownerType: PRODUCTVARIANT
+      access: { storefront: PUBLIC_READ }
     }
   ) {
-    metafieldStorefrontVisibility {
-      id
-    }
-    userErrors {
-      field
-      message
-    }
+    updatedDefinition { id }
+    userErrors { message }
   }
 }
 ```
 
 ```jsx
 mutation {
-  metafieldStorefrontVisibilityCreate(
-    input: {
+  metafieldDefinitionUpdate(
+    definition: {
       namespace: "simple_bundles"
       key: "variant_options_v2"
       ownerType: PRODUCT
+      access: { storefront: PUBLIC_READ }
     }
   ) {
-    metafieldStorefrontVisibility {
-      id
-    }
-    userErrors {
-      field
-      message
-    }
+    updatedDefinition { id }
+    userErrors { message }
   }
 }
 ```
